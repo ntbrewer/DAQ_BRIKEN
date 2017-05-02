@@ -6,10 +6,10 @@
      gcc -Wall -lpthread -ldl -lm -o hvmon hvmon.mpod.c
      gcc -Wall -lm -o hvmon-read hvmon-read.c
 */
-#include "../include/u3.h"
+#include "../../include/u3.h"
 //#include "../include/labjackusb.h"
-#include "../include/hvmon-shm.h"
-#include "../include/kelvin-shm.h"
+#include "../../include/hvmon-shm.h"
+#include "../../include/kelvin-shm.h"
 
 //int
 // mmapSetup();                  // sets up the memory map

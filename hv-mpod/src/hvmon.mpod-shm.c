@@ -6,9 +6,9 @@
      gcc -Wall -lpthread -ldl -lm -o hvmon hvmon.mpod.c
 */
 
-#include "../include/hvmon-shm.h"
-#include "../include/labjackusb.h"
-#include "../include/kelvin-shm.h"
+#include "../../include/hvmon-shm.h"
+#include "../../include/labjackusb.h"
+#include "../../include/kelvin-shm.h"
 
 void readConf();                  // processes configuration file
 //int mmapSetup();                  // sets up the memory map
