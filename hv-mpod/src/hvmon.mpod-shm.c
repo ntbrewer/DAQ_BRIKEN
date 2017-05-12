@@ -112,7 +112,7 @@ int main(int argc, char **argv){
   the segment number is stored in hvptr->pid
 */
   //mapHVmon = mmapSetup();
-  //if (mapHVmon == -1) return 0;
+  //if (mapHVmon == -1) return 0; tbd implement both with preprocessor macros
 
   shmSetup();
 
@@ -591,10 +591,11 @@ void readConf() {
         hvptr->xx[indexMax].iSet = current;
         setCurrent(indexMax);
       }
-      if (hvptr->xx[indexMax].reset != reset)
+      if (hvptr->xx[indexMax].reset != reset || onoff == 10)
       {
         setReset(indexMax);
         hvptr->xx[indexMax].reset = 0;
+        onoff = 0;
       }
       /*if getTempChan(indexMax) > allowed
         sprintf(cmd, "outputSwitch.u%i i %i",chan, 0);
@@ -629,6 +630,7 @@ void readConf() {
       */
       printf ("MPOD = %s %3u0%u    %7.1f %i\n", hvptr->xx[indexMax].ip, hvptr->xx[ii].slot, hvptr->xx[indexMax].chan, hvptr->xx[indexMax].vSet,hvptr->xx[indexMax].type);
     }
+    //new loop?
 /*
     Reached the end of the configuration file data
 */
@@ -777,7 +779,7 @@ void setHVmpod(int nf) {
   int ii=0;
   //char cmd[150]="\0", cmdResult[140]="\0";
 
-  printf (" Getting MPOD data ....");  
+  printf (" Getting MPOD data ....");
   for (ii=0; ii<indexMax; ii++){
 
     if (hvptr->xx[ii].type == 0) {
@@ -984,7 +986,7 @@ void changeParam(){
    */
 
   ii = hvptr->com1;
-  setOnOff(ii);
+  setOnOff(ii); 
   setRampUp(ii);
   setRampDown(ii);
   setVolts(ii); 
@@ -1045,6 +1047,14 @@ void setCurrent(int ii) {
   return;
 }
 /**************************************************************/
+/*void setOnOff(int ii) {
+  int idx = getCmdIdx(ii);
+  char cmd[140]="\0", cmdRes[140]="\0";
+  sprintf(cmd, "outputSwitch.u%i i %i", idx, hvptr->xx[ii].onoff);
+  snmp(1,ii,cmd,cmdRes);
+  return;
+}*/
+/**************************************************************/
 void setOnOff(int ii) {
   int idx = getCmdIdx(ii);
   char cmd[140]="\0", cmdRes[140]="\0";
@@ -1056,6 +1066,8 @@ void setOnOff(int ii) {
 void setReset(int ii) {
   int idx = getCmdIdx(ii);
   char cmd[140]="\0", cmdRes[140]="\0";
+  sprintf(cmd, "outputSwitch.u%i i %i", idx, 0);
+  snmp(1,ii,cmd,cmdRes);
   sprintf(cmd, "outputSwitch.u%i i %i", idx, 10);
   snmp(1,ii,cmd,cmdRes);
   return;
