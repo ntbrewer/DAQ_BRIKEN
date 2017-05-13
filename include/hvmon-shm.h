@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <math.h>    /* Math definitions */
 #include <signal.h>  /* Signal interrupt definitions */
+#include <vector.h>
 //#include <stddef.h>
 #include <limits.h>
 //#include <float.h>
@@ -34,6 +35,7 @@ struct hvchan {
   int tOK;
   unsigned short int chan;
   unsigned short int slot;
+  //int safe;
   int onoff;
   unsigned short int reset;
   float iMeas;   // uA

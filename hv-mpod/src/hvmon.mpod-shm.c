@@ -497,11 +497,13 @@ void readConf() {
   char hvmon_conf[200] ="\0";
   int ii=0, mm=0, slot=0, chan=0, onoff=0, reset=0;
   int mapTherm =-1, tOK=0;
+  std::vector<int> indexPhase2;
+  char phaseKey[2]="PA";
 //int itrip=0, etrip=0;
   float volts=0.0, current=0.0, dramp=0.0, ramp=0.0, vMax=2000.0;
 //float trip=0.0,  svmax=0.0, v1set=0.0, i1set=0.0;
   char ip[30]="\0", name[15]="\0";
-
+  
   //char ipsave[10][30];
   //int kk=0,new=0;
     
@@ -569,7 +571,7 @@ void readConf() {
       hvptr->xx[indexMax].vMax = vMax;   //hardcode safety switch
       strcpy(hvptr->xx[indexMax].name,name);
       strcpy(hvptr->xx[indexMax].ip,ip);
-
+      
       getHVmpodChan(indexMax);
       if (hvptr->xx[indexMax].vSet != volts)
       {
@@ -591,10 +593,9 @@ void readConf() {
         hvptr->xx[indexMax].iSet = current;
         setCurrent(indexMax);
       }
-      if (hvptr->xx[indexMax].reset != reset || onoff == 10)
+      if (onoff == 10)
       {
-        setReset(indexMax);
-        hvptr->xx[indexMax].reset = 0;
+        reset = 10;        
         onoff = 0;
       }
       /*if getTempChan(indexMax) > allowed
@@ -617,8 +618,25 @@ void readConf() {
         setOnOff(indexMax);
       } else if ( hvptr->xx[indexMax].onoff != onoff )
       {
-        hvptr->xx[indexMax].onoff = onoff;
-        setOnOff(indexMax);
+  	if (std::strstr(phaseKey,name) != NULL) 
+	{
+	  if (onoff == 1) 
+	  {
+	    setOnOffPhase1(indexMax);
+	    indexPhase2.push_back(indexMax);
+	  } else if (onoff == 0)
+	  {
+	    setSafety(indexMax,0);
+	    hvptr->xx[indexMax].onoff = onoff;
+ 	    setOnOff(indexMax);
+            setSafety(indexMax,1);
+	  }
+	} else 
+	{
+	  hvptr->xx[indexMax].onoff = onoff;
+ 	  setOnOff(indexMax);    
+	}
+        
       }
       /*
       mm = sscanf (line,"%i %s %u     %f", &ii, ip, &chan, &volts);  // MPOD data
@@ -628,9 +646,13 @@ void readConf() {
       hvptr->xx[indexMax].slot = slot;
       strcpy(hvptr->xx[indexMax].ip,ip);
       */
+      if (hvptr->xx[indexMax].reset != reset)
+      {
+        hvptr->xx[indexMax].reset = reset;
+        setReset(indexMax);
+      }
       printf ("MPOD = %s %3u0%u    %7.1f %i\n", hvptr->xx[indexMax].ip, hvptr->xx[ii].slot, hvptr->xx[indexMax].chan, hvptr->xx[indexMax].vSet,hvptr->xx[indexMax].type);
     }
-    //new loop?
 /*
     Reached the end of the configuration file data
 */
@@ -645,6 +667,9 @@ void readConf() {
   hvptr->maxchan = indexMax;
   printf ("%i HV entries found on MPODs\n",hvptr->maxchan);
   printf ("%i Temp entries found from kelvin\n",hvptr->maxtchan);
+  //loop over phase 2
+  printf ("%i HV 2 phase entries found on MPODs\n",indexPhase2.size());
+  
 
   return;
 }
@@ -1066,8 +1091,6 @@ void setOnOff(int ii) {
 void setReset(int ii) {
   int idx = getCmdIdx(ii);
   char cmd[140]="\0", cmdRes[140]="\0";
-  sprintf(cmd, "outputSwitch.u%i i %i", idx, 0);
-  snmp(1,ii,cmd,cmdRes);
   sprintf(cmd, "outputSwitch.u%i i %i", idx, 10);
   snmp(1,ii,cmd,cmdRes);
   return;
