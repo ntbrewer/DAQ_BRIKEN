@@ -45,6 +45,7 @@ void setRampUp(int ii);
 void setRampDown(int ii);
 void setCurrent(int ii);
 void setOnOff(int ii);
+void setOnOffPhase1(int ii);
 void setReset(int ii);
 void setResetAll();
 void setVMax(int ii);
@@ -668,7 +669,7 @@ void readConf() {
   printf ("%i HV entries found on MPODs\n",hvptr->maxchan);
   printf ("%i Temp entries found from kelvin\n",hvptr->maxtchan);
   //loop over phase 2
-  printf ("%i HV 2 phase entries found on MPODs\n",);
+  printf ("%i HV 2 phase entries found on MPODs\n");
   
 
   return;
