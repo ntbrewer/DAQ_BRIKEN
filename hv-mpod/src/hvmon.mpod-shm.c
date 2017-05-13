@@ -619,7 +619,7 @@ void readConf() {
         setOnOff(indexMax);
       } else if ( hvptr->xx[indexMax].onoff != onoff )
       {
-  	if (std::strstr(phaseKey,name) != NULL) 
+  	if (strstr(phaseKey,name) != NULL) 
 	{
 	  if (onoff == 1) 
 	  {
@@ -669,7 +669,7 @@ void readConf() {
   printf ("%i HV entries found on MPODs\n",hvptr->maxchan);
   printf ("%i Temp entries found from kelvin\n",hvptr->maxtchan);
   //loop over phase 2
-  printf ("%i HV 2 phase entries found on MPODs\n");
+  printf ("%i HV 2 phase entries found on MPODs\n",1);
   
 
   return;
