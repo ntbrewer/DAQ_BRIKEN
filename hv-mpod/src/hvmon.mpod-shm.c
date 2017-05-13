@@ -497,7 +497,6 @@ void readConf() {
   char hvmon_conf[200] ="\0";
   int ii=0, mm=0, slot=0, chan=0, onoff=0, reset=0;
   int mapTherm =-1, tOK=0;
-  std::vector<int> indexPhase2;
   char phaseKey[2]="PA";
 //int itrip=0, etrip=0;
   float volts=0.0, current=0.0, dramp=0.0, ramp=0.0, vMax=2000.0;
@@ -569,6 +568,7 @@ void readConf() {
       hvptr->xx[indexMax].slot = slot;
       hvptr->xx[indexMax].chan = chan;
       hvptr->xx[indexMax].vMax = vMax;   //hardcode safety switch
+      hvptr->xx[indexMax].phase2 = 0;
       strcpy(hvptr->xx[indexMax].name,name);
       strcpy(hvptr->xx[indexMax].ip,ip);
       
@@ -623,13 +623,13 @@ void readConf() {
 	  if (onoff == 1) 
 	  {
 	    setOnOffPhase1(indexMax);
-	    indexPhase2.push_back(indexMax);
+	    hvptr->xx[indexMax].phase2=1;
 	  } else if (onoff == 0)
 	  {
-	    setSafety(indexMax,0);
+	    //setSafety(indexMax,0);
 	    hvptr->xx[indexMax].onoff = onoff;
  	    setOnOff(indexMax);
-            setSafety(indexMax,1);
+            //setSafety(indexMax,1);
 	  }
 	} else 
 	{
@@ -668,7 +668,7 @@ void readConf() {
   printf ("%i HV entries found on MPODs\n",hvptr->maxchan);
   printf ("%i Temp entries found from kelvin\n",hvptr->maxtchan);
   //loop over phase 2
-  printf ("%i HV 2 phase entries found on MPODs\n",indexPhase2.size());
+  printf ("%i HV 2 phase entries found on MPODs\n",);
   
 
   return;
@@ -1081,6 +1081,14 @@ void setCurrent(int ii) {
 }*/
 /**************************************************************/
 void setOnOff(int ii) {
+  int idx = getCmdIdx(ii);
+  char cmd[140]="\0", cmdRes[140]="\0";
+  sprintf(cmd, "outputSwitch.u%i i %i", idx, hvptr->xx[ii].onoff);
+  snmp(1,ii,cmd,cmdRes);
+  return;
+}
+/**************************************************************/
+void setOnOffPhase1(int ii) {
   int idx = getCmdIdx(ii);
   char cmd[140]="\0", cmdRes[140]="\0";
   sprintf(cmd, "outputSwitch.u%i i %i", idx, hvptr->xx[ii].onoff);
