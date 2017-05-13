@@ -48,6 +48,7 @@ void setOnOff(int ii);
 void setOnOffPhase1(int ii);
 void setReset(int ii);
 void setResetAll();
+void setSafety(int ii);
 void setVMax(int ii);
 int openTherm();
 //void closeTherm();
@@ -57,6 +58,7 @@ void changeParam();
 int scan2int();
 float scan2float();
 int getCmdIdx(int ii);
+float getVMeas(int ii);
 /*void setV1(int ii);
 void setI1(int ii);
 void setSV(int ii);*/
@@ -499,6 +501,7 @@ void readConf() {
   int ii=0, mm=0, slot=0, chan=0, onoff=0, reset=0;
   int mapTherm =-1, tOK=0;
   char phaseKey[2]="PA";
+  int indexPhase2=0;
 //int itrip=0, etrip=0;
   float volts=0.0, current=0.0, dramp=0.0, ramp=0.0, vMax=2000.0;
 //float trip=0.0,  svmax=0.0, v1set=0.0, i1set=0.0;
@@ -625,12 +628,13 @@ void readConf() {
 	  {
 	    setOnOffPhase1(indexMax);
 	    hvptr->xx[indexMax].phase2=1;
+            indexPhase2 +=1;
 	  } else if (onoff == 0)
 	  {
-	    //setSafety(indexMax,0);
+	    setSafety(indexMax,0);
 	    hvptr->xx[indexMax].onoff = onoff;
  	    setOnOff(indexMax);
-            //setSafety(indexMax,1);
+            setSafety(indexMax,1);
 	  }
 	} else 
 	{
@@ -638,7 +642,7 @@ void readConf() {
  	  setOnOff(indexMax);    
 	}
         
-      }
+      }//set Phase1
       /*
       mm = sscanf (line,"%i %s %u     %f", &ii, ip, &chan, &volts);  // MPOD data
       hvptr->xx[indexMax].type = ii;
@@ -669,7 +673,31 @@ void readConf() {
   printf ("%i HV entries found on MPODs\n",hvptr->maxchan);
   printf ("%i Temp entries found from kelvin\n",hvptr->maxtchan);
   //loop over phase 2
-  printf ("%i HV 2 phase entries found on MPODs\n",1);
+  if (indexPhase2 !=0) printf ("%i HV 2 phase entries found on MPODs\n",indexPhase2);
+
+  while (indexPhase2 !=0) 
+  {
+    indexPhase2 =0;
+    for (ii=0; ii<indexMax; ii++)
+    {
+
+      if (hvptr->xx[ii].phase2 == 1)
+      {
+        volts = getVMeas(ii)
+        if (abs(hvptr->xx[ii].vSet-volts)/volts < .01) 
+	{
+          ChangeParam(ii);
+          hvptr->xx[ii].phase2 =0;
+	} else 
+	{
+	  indexPhase2=0;
+	}
+      }
+
+    }
+    sleep(30);
+
+  }//end Phase 2 loop
   
 
   return;
@@ -799,6 +827,14 @@ void getHVmpodChan(int ii) {
   //        hvptr->xx[ii].iSet, hvptr->xx[ii].iMeas, hvptr->xx[ii].onoff);
   //printf (".... finished \n");  
   return;
+}
+/******************************************************************************/
+void getVMeas(int ii) {
+  int idx = getCmdIdx(ii);
+  char cmd[150]="\0", cmdResult[140]="\0";
+  sprintf(cmd,"outputMeasurementSenseVoltage.u%i" ,idx);
+  snmp(0,ii,cmd,cmdResult);     //mpodGETguru(cmd, cmdResult);     // read the measured voltage
+  return readFloat(cmdResult);
 }
 /******************************************************************************/
 void setHVmpod(int nf) {
@@ -1012,12 +1048,12 @@ void changeParam(){
    */
 
   ii = hvptr->com1;
-  setOnOff(ii); 
   setRampUp(ii);
   setRampDown(ii);
   setVolts(ii); 
   setCurrent(ii);
   setReset(ii);
+  setOnOff(ii);
   return;
 }
 //******************************************************************/
@@ -1089,9 +1125,15 @@ void setOnOff(int ii) {
   return;
 }
 /**************************************************************/
-void setOnOffPhase1(int ii) {
+void setOnOffPhase1(int ii) { //HARDCODED for BRIKEN!!! tbd...
   int idx = getCmdIdx(ii);
   char cmd[140]="\0", cmdRes[140]="\0";
+  sprintf(cmd, "outputVoltage.u%i F %f", idx, 50);
+  snmp(1,ii,cmd,cmdRes);
+  sprintf(cmd, "outputVoltageRiseRate.u%i F %f", idx, 1);
+  snmp(1,ii,cmd,cmdRes);
+  sprintf(cmd, "outputCurrent.u%i F %f", idx, 0.0001);
+  snmp(1,ii,cmd,cmdRes);
   sprintf(cmd, "outputSwitch.u%i i %i", idx, hvptr->xx[ii].onoff);
   snmp(1,ii,cmd,cmdRes);
   return;
@@ -1113,6 +1155,15 @@ void setResetAll( ) {
     }
   }
   printf (" finished.\n");
+  return;
+}
+/**************************************************************/
+void setSafety(int ii, int jj) {
+  //int idx = getCmdIdx(ii) - hvptr->xx[ii].chan;
+  int idx = hvptr->xx[ii].slot*100;
+  char cmd[140]="\0", cmdRes[140]="\0";
+  sprintf(cmd, "groupSwitch.%i i %i", idx, jj);
+  snmp(1,ii,cmd,cmdRes);
   return;
 }
 /**************************************************************/
