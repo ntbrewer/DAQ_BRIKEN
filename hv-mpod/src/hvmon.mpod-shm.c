@@ -48,7 +48,7 @@ void setOnOff(int ii);
 void setOnOffPhase1(int ii);
 void setReset(int ii);
 void setResetAll();
-void setSafety(int ii);
+void setSafety(int ii,int jj);
 void setVMax(int ii);
 int openTherm();
 //void closeTherm();
@@ -683,10 +683,10 @@ void readConf() {
 
       if (hvptr->xx[ii].phase2 == 1)
       {
-        volts = getVMeas(ii)
+        volts = getVMeas(ii);
         if (abs(hvptr->xx[ii].vSet-volts)/volts < .01) 
 	{
-          ChangeParam(ii);
+          changeParam(ii);
           hvptr->xx[ii].phase2 =0;
 	} else 
 	{
@@ -829,7 +829,7 @@ void getHVmpodChan(int ii) {
   return;
 }
 /******************************************************************************/
-void getVMeas(int ii) {
+float getVMeas(int ii) {
   int idx = getCmdIdx(ii);
   char cmd[150]="\0", cmdResult[140]="\0";
   sprintf(cmd,"outputMeasurementSenseVoltage.u%i" ,idx);
@@ -1128,9 +1128,9 @@ void setOnOff(int ii) {
 void setOnOffPhase1(int ii) { //HARDCODED for BRIKEN!!! tbd...
   int idx = getCmdIdx(ii);
   char cmd[140]="\0", cmdRes[140]="\0";
-  sprintf(cmd, "outputVoltage.u%i F %f", idx, 50);
+  sprintf(cmd, "outputVoltage.u%i F %f", idx, 50.);
   snmp(1,ii,cmd,cmdRes);
-  sprintf(cmd, "outputVoltageRiseRate.u%i F %f", idx, 1);
+  sprintf(cmd, "outputVoltageRiseRate.u%i F %f", idx, 1.);
   snmp(1,ii,cmd,cmdRes);
   sprintf(cmd, "outputCurrent.u%i F %f", idx, 0.0001);
   snmp(1,ii,cmd,cmdRes);
