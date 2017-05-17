@@ -500,7 +500,7 @@ void readConf() {
   char hvmon_conf[200] ="\0";
   int ii=0, mm=0, slot=0, chan=0, onoff=0, reset=0;
   int mapTherm =-1, tOK=0;
-  char phaseKey[2]="PA";
+  char phaseKey[]="PA";
   int indexPhase2=0;
 //int itrip=0, etrip=0;
   float volts=0.0, current=0.0, dramp=0.0, ramp=0.0, vMax=2000.0;
@@ -622,25 +622,28 @@ void readConf() {
         setOnOff(indexMax);
       } else if ( hvptr->xx[indexMax].onoff != onoff )
       {
-  	if (strstr(phaseKey,name) != NULL) 
-	{
-	  if (onoff == 1) 
-	  {
-	    setOnOffPhase1(indexMax);
-	    hvptr->xx[indexMax].phase2=1;
+		    char * findKey = strstr(name, phaseKey);
+    		
+		  	if (findKey != NULL) 
+				{
+				  if (onoff == 1) 
+				  {
+	    			setOnOffPhase1(indexMax);
+				    hvptr->xx[indexMax].phase2=1;
             indexPhase2 +=1;
-	  } else if (onoff == 0)
-	  {
-	    setSafety(indexMax,0);
-	    hvptr->xx[indexMax].onoff = onoff;
- 	    setOnOff(indexMax);
-            setSafety(indexMax,1);
-	  }
-	} else 
-	{
-	  hvptr->xx[indexMax].onoff = onoff;
- 	  setOnOff(indexMax);    
-	}
+
+				  } else if (onoff == 0)
+				  {
+				    setSafety(indexMax,0);
+				    hvptr->xx[indexMax].onoff = onoff;
+			 	    setOnOff(indexMax);
+			      setSafety(indexMax,1);
+				  }
+				} else 
+				{
+				  hvptr->xx[indexMax].onoff = onoff;
+			 	  setOnOff(indexMax);    
+				}
         
       }//set Phase1
       /*
@@ -656,7 +659,7 @@ void readConf() {
         hvptr->xx[indexMax].reset = reset;
         setReset(indexMax);
       }
-      printf ("MPOD = %s %3u0%u    %7.1f %i\n", hvptr->xx[indexMax].ip, hvptr->xx[ii].slot, hvptr->xx[indexMax].chan, hvptr->xx[indexMax].vSet,hvptr->xx[indexMax].type);
+      printf ("MPOD = %s %3u,%u    %7.1f %s\n", hvptr->xx[indexMax].ip, hvptr->xx[ii].slot, hvptr->xx[indexMax].chan, hvptr->xx[indexMax].vSet,name);
     }
 /*
     Reached the end of the configuration file data
@@ -677,28 +680,31 @@ void readConf() {
 
   while (indexPhase2 !=0) 
   {
+    sleep(30);
+    //printf("p2 loop");
     indexPhase2 =0;
     for (ii=0; ii<indexMax; ii++)
     {
-
+	    //printf("p2 checking");
       if (hvptr->xx[ii].phase2 == 1)
       {
         volts = getVMeas(ii);
-        if (abs(hvptr->xx[ii].vSet-volts)/volts < .01) 
-	{
+        //printf("volts: %f",abs(50-volts)/volts );
+        if (abs(50.-volts)/volts < 0.05) 
+	      {
           changeParam(ii);
           hvptr->xx[ii].phase2 =0;
-	} else 
-	{
-	  indexPhase2=0;
-	}
+				} else 
+				{
+				  indexPhase2++;
+				}
       }
 
     }
-    sleep(30);
+  
 
   }//end Phase 2 loop
-  
+  printf("finished ReadConf()...");  
 
   return;
 }
@@ -764,37 +770,44 @@ void getHVmpod() {
 void getHVmpodChan(int ii) {
   int setget=0;
   char cmd[150]="\0", cmdResult[140]="\0";
-
+  int idx = getCmdIdx(ii);
   //printf (" Getting MPOD data ....");  
-
+  //float vSet,vMeas,vRamp,iMeas,iSet;
+  //int onoff;
     if (hvptr->xx[ii].type == 0) {
-      if (hvptr -> xx[ii].slot == 0)
-      {
-          sprintf(cmd,"outputVoltage.u%i", hvptr->xx[ii].chan); 
+    /*  if (hvptr -> xx[ii].slot == 0)
+      {*/
+          sprintf(cmd,"outputVoltage.u%i", idx); 
           snmp(setget,ii,cmd,cmdResult);     //mpodGETguru(cmd, cmdResult);     // read the set voltage
           //printf(cmdResult);
           hvptr->xx[ii].vSet = readFloat(cmdResult);
+          //vSet = readFloat(cmdResult);
 
-          sprintf(cmd,"outputMeasurementSenseVoltage.u%i" ,hvptr->xx[ii].chan);
+          sprintf(cmd,"outputMeasurementSenseVoltage.u%i" ,idx);
           snmp(setget,ii,cmd,cmdResult);     //mpodGETguru(cmd, cmdResult);     // read the measured voltage
           hvptr->xx[ii].vMeas = readFloat(cmdResult);
+          //vMeas = readFloat(cmdResult);
 
-          sprintf(cmd,"outputVoltageRiseRate.u%i" ,hvptr->xx[ii].chan);
+          sprintf(cmd,"outputVoltageRiseRate.u%i" ,idx);
           snmp(setget,ii,cmd,cmdResult);    //mpodGETguru(cmd, cmdResult);     // read the voltage ramp rate
           hvptr->xx[ii].vRamp = readFloat(cmdResult);
+          //vRamp = readFloat(cmdResult);
 
-          sprintf(cmd,"outputMeasurementCurrent.u%i",hvptr->xx[ii].chan);
+          sprintf(cmd,"outputMeasurementCurrent.u%i",idx);
           snmp(setget,ii,cmd,cmdResult);   //mpodGETguru(cmd, cmdResult);     // read the measured current
           hvptr->xx[ii].iMeas = readFloat(cmdResult);
+          //iMeas = readFloat(cmdResult);
 
-          sprintf(cmd,"outputConfigMaxCurrent.u%i",hvptr->xx[ii].chan);
+          sprintf(cmd,"outputConfigMaxCurrent.u%i",idx);
           snmp(setget,ii,cmd,cmdResult);   //mpodGETguru(cmd, cmdResult);     // read the max current
           hvptr->xx[ii].iSet = readFloat(cmdResult);
+          //iSet = readFloat(cmdResult);
 
-          sprintf(cmd,"outputSwitch.u%i",hvptr->xx[ii].chan);
+          sprintf(cmd,"outputSwitch.u%i",idx);
           snmp(setget,ii,cmd,cmdResult);   //mpodGETguru(cmd, cmdResult);     // read the max current
           hvptr->xx[ii].onoff = readOnOff(cmdResult);
-      } else 
+          //onoff = readOnOff(cmdResult);
+      /*} else 
       { 
           sprintf(cmd,"outputVoltage.u%i0%i",hvptr->xx[ii].slot,hvptr->xx[ii].chan); 
           snmp(setget,ii,cmd,cmdResult);     //mpodGETguru(cmd, cmdResult);     // read the set voltage
@@ -820,12 +833,15 @@ void getHVmpodChan(int ii) {
           sprintf(cmd,"outputSwitch.u%i0%i",hvptr->xx[ii].slot,hvptr->xx[ii].chan);
           snmp(setget,ii,cmd,cmdResult);   //mpodGETguru(cmd, cmdResult);     // read the max current
           hvptr->xx[ii].onoff = readOnOff(cmdResult);
-      }
+      }*/
     }
-  //printf("current settings are: V=%f, Vm=%f, Vup=%f, Vdn=%f, I=%f, Im=%f, 1/0=%i",
-  //        hvptr->xx[ii].vSet, hvptr->xx[ii].vMeas,hvptr->xx[ii].vRamp, hvptr->xx[ii].downRamp, 
-  //        hvptr->xx[ii].iSet, hvptr->xx[ii].iMeas, hvptr->xx[ii].onoff);
-  //printf (".... finished \n");  
+  printf("current set variables are: V=%f, Vm=%f, Vup=%f, Vdn=%f, I=%f, Im=%f, 1/0=%i\n",
+          hvptr->xx[ii].vSet, hvptr->xx[ii].vMeas,hvptr->xx[ii].vRamp, hvptr->xx[ii].downRamp, 
+          hvptr->xx[ii].iSet, hvptr->xx[ii].iMeas, hvptr->xx[ii].onoff);
+  //printf("current settings are: V=%f, Vm=%f, Vup=%f, I=%f, Im=%f, 1/0=%i\n",
+	//				vSet, vMeas,vRamp, iSet, iMeas, onoff);
+        
+  printf (".... finished \n");  
   return;
 }
 /******************************************************************************/
@@ -1134,8 +1150,8 @@ void setOnOffPhase1(int ii) { //HARDCODED for BRIKEN!!! tbd...
   snmp(1,ii,cmd,cmdRes);
   sprintf(cmd, "outputCurrent.u%i F %f", idx, 0.0001);
   snmp(1,ii,cmd,cmdRes);
-  sprintf(cmd, "outputSwitch.u%i i %i", idx, hvptr->xx[ii].onoff);
-  snmp(1,ii,cmd,cmdRes);
+  hvptr->xx[ii].onoff=1;
+  setOnOff(ii);
   return;
 }
 /**************************************************************/
