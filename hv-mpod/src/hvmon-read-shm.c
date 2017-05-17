@@ -169,7 +169,7 @@ int main(int argc, char **argv){
       break;
 
     case 18:
-      printf("Reseting.....\n");
+      printf("Reseting.....run all off first!\n");
       ResetAllChan();
       break;
     case 19:
@@ -757,7 +757,7 @@ void detParam() {
       if (yy <= 100.0) hvptr->xx[ii].vRamp = yy;
       break;
     case 5:
-      hvptr->xx[ii].reset = 1;
+      hvptr->xx[ii].reset = 10;
       break;
     case 6:
       printf ("Not used. \n");

@@ -35,7 +35,7 @@ struct hvchan {
   unsigned short int chan;
   unsigned short int slot;
   //int safe;
-  int phase2;
+  int twoPhase;
   int onoff;
   unsigned short int reset;
   float iMeas;   // uA

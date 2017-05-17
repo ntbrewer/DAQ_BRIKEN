@@ -375,7 +375,7 @@ OutputEntry ::= SEQUENCE {
         outputSupervisionMaxSenseVoltage    Float,
         outputSupervisionMaxTerminalVoltage Float,
         outputSupervisionMaxCurrent         Float,
---        outputSupervisionMaxTemperature     Integer32,
+        outputSupervisionMaxTemperature     Integer32,
 
         outputConfigMaxSenseVoltage         Float,
         outputConfigMaxTerminalVoltage      Float,
