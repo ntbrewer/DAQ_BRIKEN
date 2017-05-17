@@ -1,0 +1,91 @@
+Setup:
+2 Cards with 8 channels each one where the 10 BRIKEN PA are connected.
+The visualiser located in the local IP accessible webpage 192.168.13.239 must show the implemented changes. Open webpage first!
+ssh -X pixie16@10.32.6.161 (IP + psw) pswd: briken2015
+firefox &
+Type local IP 192.168.13.239 in the address bar
+ 
+Pre-Amplifier
+HV Card
+Card Channel
+Voltage
+3He Tubes
+ 
+PA1 (diff)	1	0	1450 V	RIKEN: Ø 2.54cm (5.132 atm)	Download specifications (Downstream counters)
+PA2 (diff)	1	1	1450 V	
+RIKEN: Ø 2.54cm (5.132 atm)
+(Upsteram counters)
+PA3 (diff)	1	
+2
+1550 V	UPC: Ø 2.54cm (8atm)	 
+PA4 (diff)
+1	3	1550 V	UPC: Ø 2.54cm (8atm)	 
+PA5 (single)	1	4	1550 V	UPC: Ø 2.54cm (8atm)	 
+PA6 (single)	2	100	1200 V	ORNL: Ø 2.54cm (10.26atm)	Download specifications
+PA7 (single)	2	101	1750 V	ORNL: Ø 5.08cm (10.17atm)	Download specifications
+PA8 (single)	2	102	1750 V	ORNL: Ø 5.08cm (10.17atm)	 
+PA9 (single)	2	103	1750 V	ORNL: Ø 5.08cm (10.17atm)	 
+PA10 (single)	2	104	1750 V	ORNL:Ø 5.08cm (10.17atm)	 
+ 
+High voltage control: All High voltage 3He and HPGe can now be set via a configuration file called hvmon.conf and a program called hvmon. hvmon also watches the temperature of the HPGe via the RTD outputs and sets trip and other safety settings.
+The important locations are as follows:
+Path for conf file: /home/pixie16/DAQ_1/include/hvmon.conf
+Path for temperature monitor: /home/pixie16/DAQ_1/kelvin/kelvin-u3
+Path for temperature logging: /home/pixie16/DAQ_1/kelvin/kelvin-log
+Path for hvmon: /home/pixie16/DAQ_1/hv-mpod/hvmon
+This is also the order in which the programs should be run at first. 
+If the kelvin programs are already running ('ps -A | grep kelvin' to check) and you wish to change the settings:
+Adjust hvmon.conf
+stop 'hvmon' with ctrl+c
+rerun by './hvmon' (also 'up + Enter')
+The example below turns on PA1 , RESETs PA2 after a ramp down fault, and turns all other channels off.
+Type IP address channel slot name voltage Current RampUp RampDn Switch On/Off/RESET
+                                                            V            A            V/s        V/s                 1 / 0 / 10
+------ --------------- --------- ----- ---- ------- ------- ------ ------ -------------
+0 192.168.13.239 0 0 PA1 1450 0.0001 50 10 1
+0 192.168.13.239 1 0 PA2 1450 0.0001 50 10 10
+0 192.168.13.239 2 0 PA3 1550 0.0001 50 10 0
+0 192.168.13.239 3 0 PA4 1550 0.0001 50 10 0
+0 192.168.13.239 4 0 PA5 1550 0.0001 50 10 0
+0 192.168.13.239 5 0 OFF 0 0.0001 50 10 0
+0 192.168.13.239 6 0 OFF 0 0.0001 50 10 0
+0 192.168.13.239 7 0 OFF 0 0.0001 50 10 0
+0 192.168.13.239 0 1 PA6 1200 0.0001 50 10 0
+0 192.168.13.239 1 1 PA7 1750 0.0001 50 10 0
+0 192.168.13.239 2 1 PA8 1750 0.0001 50 10 0
+0 192.168.13.239 3 1 PA9 1750 0.0001 50 10 0
+0 192.168.13.239 4 1 PA10 1750 0.0001 50 10 0
+0 192.168.13.239 5 1 OFF 0 0.0001 50 10 0
+0 192.168.13.239 6 1 OFF 0 0.0001 50 10 0
+0 192.168.13.239 7 1 OFF 0 0.0001 50 10 0
+0 192.168.13.239 0 3 D40 3000 0.0001 2 5 0
+0 192.168.13.239 1 3 D41 3000 0.0001 2 5 0
+0 192.168.13.239 2 3 D42 3000 0.0001 2 5 0
+0 192.168.13.239 3 3 D43 3000 0.0001 2 5 0
+0 192.168.13.239 4 3 G70 2500 0.0001 2 5 0
+0 192.168.13.239 5 3 G71 3000 0.0001 2 5 0
+0 192.168.13.239 6 3 G72 2500 0.0001 2 5 0
+0 192.168.13.239 7 3 G73 2500 0.0001 2 5 0
+-1
+=================================================
+Everything below type = -1 is treated as a comment
+(Clover Names are DetectorName+(0,1,2,3=Black,Red/Orange,Green,Blue)
+type = 0 => MPOD HV modules => accessed thru snmp
+type = 1 => CAEN x527 HV modules => accessed thru CAENHVwrapper
+With MPOD one can use IP address and channel numbers based on slot occupation
+PA(1-4) are differential and PA(5-10) are unipolar.
+ 
+Off always means ramp down and then turn off. The PA's currently like to hold on to voltage (~10-50V) and will likely cause a fault at ramp down and need reset. 
+!!!!!!!!!!!!!!
+Important notes about mpod pathologies:
+ramp up and down may not get set correctly because setting rampup in mpod also changes rampdown! I haven't fully tested my implementation. 
+'PA' keyword triggers 2phase ramping. values for ramping are hardcoded for BRIKEN!!
+All available menu options for hvmon-read program should be functional.
+contact and source repo
+brewer.nathant@gmail.com
+nathan.t.brewer (skype)
+1-615-712-3925
+github.com/ntbrewer/DAQ_BRIKEN.git
+
+
+
