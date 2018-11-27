@@ -41,6 +41,7 @@ void getHVmpodChan(int ii);
 void setHVmpodOn();
 void setHVmpodOff();
 void setGeHVmpod(int ii);
+void setGeHVmpodChar(int ii, char *isOK, int part);
 void setVolts(int ii);
 void setRampUp(int ii);
 void setRampDown(int ii);
@@ -55,7 +56,7 @@ void setVMax(int ii);
 int openTherm();
 //void closeTherm();
 void getTemp();
-int checkTemp();
+void checkTemp(char *arr);
 void changeParam();
 int scan2int();
 float scan2float();
@@ -106,7 +107,6 @@ int main(int argc, char **argv){
   //int mapTherm=-1; //mapHVmon,
   pid_t pid;
   long int p0=0,p1=1;
-  int  tOK=0;
   //char cmdRes[140] = "\0";
   printf("Working directory: %s\n",getcwd(path,PATH_MAX+1));
   strcpy(mpod_mib,path);                  // copy path to mpod mib file
@@ -141,7 +141,7 @@ int main(int argc, char **argv){
 */
   //mapTherm = openTherm();
   readConf();
-  
+  char tOK[16]="\0"; //must come after readConf which runs openTherm()!
 /*  
   Setup time of next fill based on current time and configure file
 */
@@ -174,10 +174,16 @@ int main(int argc, char **argv){
       signalBlock(p1);
       getHVmpod();
       getTemp(); 
-      tOK = checkTemp();
-      if (tOK != 1)
+      checkTemp(tOK);
+      if (tOK[0] != '2')
       {
-         setGeHVmpod(0);
+         for (int ii=0; ii < degptr->maxchan; ii++)
+         {
+           if (tOK[ii] != '1') 
+           {
+             setGeHVmpodChar(0, tOK, ii);
+           }
+         } 
          printf("Bad Temp: shutting Down!");
          sendEmail();
          hvptr->com0 = -1;
@@ -202,10 +208,16 @@ int main(int argc, char **argv){
       kill(degptr->pid,SIGALRM);  // send an alarm to let kelvin know it needs to do command (2)
       sleep(2);                   // sleep for a second to allow kelvin to read new values
       getTemp();
-      tOK = checkTemp();
-      if (tOK != 1)
+      checkTemp(tOK);
+      if (tOK[0] != '2')
       {
-         setGeHVmpod(0);
+         for (int ii=0; ii < degptr->maxchan; ii++)
+         {
+           if (tOK[ii] != '1') 
+           {
+             setGeHVmpodChar(0, tOK, ii);
+           }
+         } 
          printf("Bad Temp: shutting Down!");
          sendEmail();
          hvptr->com0 = -1;
@@ -474,7 +486,7 @@ void sendEmail() {
   int status;
   char res[200];
   res[0] = '\0';
-  fp = popen(" mutt -s \"MESSAGE FROM LN@BRIKEN!\" brewer.nathant@gmail.com -c seaborgium263@gmail.com < LNemail.txt  ", "r");   
+  fp = popen(" mutt -s \"MESSAGE FROM LN@BRIKEN!\" brewer.nathant@gmail.com -c seaborgium263@gmail.com -c Briken.neutron@gmail.com < LNemail.txt  ", "r");   
   // open child process - call to system; choosing this way
 
   if (fp == NULL){                             // so that we get the immediate results
@@ -503,7 +515,8 @@ void readConf() {
   char line[200]="\0";
   char hvmon_conf[200] ="\0";
   int ii=0, mm=0, slot=0, chan=0, onoff=0, reset=0;
-  int mapTherm =-1, tOK=0;
+  int mapTherm =-1;
+  
   char phaseKey[]="PA";
   int indexPhase2=0;
 //int itrip=0, etrip=0;
@@ -535,6 +548,9 @@ void readConf() {
  Should be positioned to read file
 */
   indexMax = 0;
+  mapTherm = openTherm();
+  if (mapTherm == -1) printf("WARNING: Temperature unmonitored!!");
+
   while (1) {                   // 1 = true
     fgets(line,200,ifile);
     if (feof(ifile)) {
@@ -611,24 +627,33 @@ void readConf() {
         snmp(1,indexMax,cmd,cmdRes);
         hvptr->xx[indexMax].onOff = 0; 
       else */
-      mapTherm = openTherm();
+      
       //setSafety(indexMax,1); //groupsSwitch not working. This sets to high trip current
       //snmpget -Ov -v 2c -M /usr/share/snmp/mibs -m ../include/WIENER-CRATE-MIB.txt -c guru <ip> groupsSwitch.<index> (i.e. 100, 200 etc. )
-	    char * findKey = strstr(name, phaseKey);
-	    if (findKey != NULL)  hvptr->xx[indexMax].twoPhase=1;
-	    
-      if (mapTherm != -1)
-        tOK = checkTemp();
-      hvptr->xx[indexMax].tOK = tOK;
-      printf(" tok = %i\n",tOK);
-      if (tOK==1 && hvptr->xx[indexMax].onoff != onoff && hvptr->xx[indexMax].slot == 3  ) 
+      char * findKey = strstr(name, phaseKey);
+      if (findKey != NULL)  hvptr->xx[indexMax].twoPhase=1;
+
+      if (mapTherm != -1) 
       {
-        hvptr->xx[indexMax].onoff = onoff;
-        setOnOff(indexMax);
-      } else if (tOK==0 && hvptr->xx[indexMax].slot == 3 && hvptr->xx[indexMax].onoff != onoff) 
-      {
-        hvptr->xx[indexMax].onoff = 0;
-        setOnOff(indexMax);
+        char tOK[16]="\0"; //must come after openTherm()!
+        checkTemp(tOK);
+        hvptr->xx[indexMax].tOK[0] = tOK[0];
+        printf(" tok = %c\n",tOK[0]);
+        if (tOK[0]=='2' && hvptr->xx[indexMax].onoff != onoff && findKey==NULL) 
+        {
+          hvptr->xx[indexMax].onoff = onoff;
+          setOnOff(indexMax);
+        } else if (tOK[0] != '2' && hvptr->xx[indexMax].onoff != onoff  && findKey==NULL) 
+        {
+          for (int ii=0; ii < degptr->maxchan; ii++)
+          {
+            if (tOK[ii] != '1' && tOK[ii]==hvptr->xx[indexMax].name[0]) 
+            {
+              hvptr->xx[indexMax].onoff = 0;
+              setOnOff(indexMax);
+            }
+          } 
+        }
       } else if ( hvptr->xx[indexMax].onoff != onoff )
       {
 		  	if (findKey != NULL) 
@@ -934,6 +959,22 @@ void setGeHVmpod(int nf) {
   return;
 }
 /******************************************************************************/
+void setGeHVmpodChar(int nf, char *isOK, int part) {
+  int ii=0;
+  //char cmd[150]="\0", cmdResult[140]="\0";
+
+  printf (" Getting MPOD data ....");  
+  for (ii=0; ii<indexMax; ii++){
+
+    if (hvptr->xx[ii].name[0] == isOK[part]) { 
+      hvptr->xx[ii].onoff = nf;      
+      setOnOff(ii);    //mpodGETguru(cmd, cmdResult);     // read the set voltage
+    }
+  }
+  printf (".... finished \n");  
+  return;
+}
+/******************************************************************************/
 void snmp(int setget, int ii, char *cmd, char *cmdResult) {
   //  pid_t wait(int *stat_loc);
   FILE *fp;
@@ -1079,14 +1120,19 @@ void getTemp(){
 }
 /**************************************************************/
 
-int checkTemp(){
+void checkTemp(char *isOK){
   /* Should talk to shm to get data*/
-  int isOk=0, ii, cnt=0;
+  int ii, cnt=0;
+//  char isOk[degptr->maxchan+1]="\0",
   for (ii=0; ii < degptr->maxchan; ii++)
   {
       if ( (degptr->temps[ii].degree < degptr->temps[ii].limit ) && degptr->temps[ii].degree > -500.)
       {
-      	cnt++;
+      	isOK[ii]=degptr->temps[ii].name[0];
+        cnt++;
+      } else 
+      {
+        isOK[ii]='1';
       }
       //printf("%i ", cnt );
       hvptr-> mpodUnit[ii] = degptr->temps[ii].unit;
@@ -1095,10 +1141,10 @@ int checkTemp(){
   hvptr-> maxtchan = degptr->maxchan;
   if ( cnt == degptr->maxchan )
   {
-     isOk=1;
+     isOK[0]='2';
   }
   //printf("%i temp check\n",isOk);
-  return(isOk);
+  return;
 }
 
 

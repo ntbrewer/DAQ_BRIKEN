@@ -31,7 +31,7 @@ struct hvchan {
   int type;       // 0 = MPOD, 1 = CAEN
   char ip[30];    // ip address used for MPOD and CAEN
   int caenH;      // caen handle
-  int tOK;
+  char tOK[2];
   unsigned short int chan;
   unsigned short int slot;
   //int safe;
