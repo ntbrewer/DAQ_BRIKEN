@@ -478,6 +478,7 @@ void readConf() {
 //float trip=0.0,  svmax=0.0, v1set=0.0, i1set=0.0;
   char ip[30]="\0", name[15]="\0";
   char phaseKey[]="PA";
+  char YSOKey[] ="Y";
   //char ipsave[10][30];
   //int kk=0,new=0;
     
@@ -581,8 +582,9 @@ void readConf() {
         hvptr->xx[indexMax].onOff = 0; 
       else */
       char * findKey = strstr(name, phaseKey);
+      char * findKey2 = strstr(name, YSOKey);
 
-      if (mapTherm != -1 && findKey == NULL) 
+      if (mapTherm != -1 && findKey == NULL && findKey2==NULL) 
       {
         char tOK[16]="\0"; //must come after openTherm()!
         checkTemp(tOK);

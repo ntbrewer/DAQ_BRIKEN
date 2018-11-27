@@ -518,6 +518,7 @@ void readConf() {
   int mapTherm =-1;
   
   char phaseKey[]="PA";
+  char YSOKey[]="Y";
   int indexPhase2=0;
 //int itrip=0, etrip=0;
   float volts=0.0, current=0.0, dramp=0.0, ramp=0.0, vMax=2000.0;
@@ -631,19 +632,21 @@ void readConf() {
       //setSafety(indexMax,1); //groupsSwitch not working. This sets to high trip current
       //snmpget -Ov -v 2c -M /usr/share/snmp/mibs -m ../include/WIENER-CRATE-MIB.txt -c guru <ip> groupsSwitch.<index> (i.e. 100, 200 etc. )
       char * findKey = strstr(name, phaseKey);
+      char * findKey2 = strstr(name, YSOKey);
+
       if (findKey != NULL)  hvptr->xx[indexMax].twoPhase=1;
 
-      if (mapTherm != -1) 
+      if (mapTherm != -1  && findKey==NULL && findKey2==NULL) 
       {
         char tOK[16]="\0"; //must come after openTherm()!
         checkTemp(tOK);
         hvptr->xx[indexMax].tOK[0] = tOK[0];
         printf(" tok = %c\n",tOK[0]);
-        if (tOK[0]=='2' && hvptr->xx[indexMax].onoff != onoff && findKey==NULL) 
+        if (tOK[0]=='2' && hvptr->xx[indexMax].onoff != onoff) 
         {
           hvptr->xx[indexMax].onoff = onoff;
           setOnOff(indexMax);
-        } else if (tOK[0] != '2' && hvptr->xx[indexMax].onoff != onoff  && findKey==NULL) 
+        } else if (tOK[0] != '2' && hvptr->xx[indexMax].onoff != onoff) 
         {
           for (int ii=0; ii < degptr->maxchan; ii++)
           {
@@ -671,6 +674,7 @@ void readConf() {
 				  }
 				} else 
 				{
+                                  hvptr->xx[indexMax].onoff = onoff;
 			 	  setOnOff(indexMax);    
 				}
         
